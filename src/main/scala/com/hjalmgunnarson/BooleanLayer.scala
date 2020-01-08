@@ -67,13 +67,6 @@ case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
     }
   }
 
-//  def excludeCellsByBlockCombination(): Unit = {
-//    val temp = lineParts.groupBy(part => part.index).values.map(list => list.filter)
-//
-//
-//
-//  }
-
   // Join all the lines, columns and block and search
   def findSolution(): List[ValueCell] =
     lines.values ++ columns.values ++ blocks.values flatMap findUniqueCandidates toList
@@ -81,7 +74,7 @@ case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
   // find the lists of cells holding exactly one empty cell. This cell should contain the number
   def findUniqueCandidates(cells: List[BinaryCell]): Option[ValueCell] =
     cells.filter(_.value.isEmpty) match {
-      case i :: Nil if !cells.contains(Some(true)) => Some(ValueCell(i.x, i.y, this.index))
+      case i :: Nil if !cells.exists(_.value.contains(true)) => Some(ValueCell(i.x, i.y, this.index))
       case _ => None
     }
 

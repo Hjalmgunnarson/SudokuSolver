@@ -1,42 +1,8 @@
 package com.hjalmgunnarson
 
-import org.junit.runner.RunWith
-import org.scalatest.{FunSuite, Matchers}
-import org.scalatest.junit.JUnitRunner
-import SudokuSolver._
+import org.scalatest.{FunSpec, Matchers}
 
 import scala.collection._
-
-//@RunWith(classOf[JUnitRunner])
-//class ListSuite extends FunSuite with Matchers {
-//
-//  test("An empty list should be empty") {
-//    List() should be ('empty)
-//    Nil should be ('empty)
-//  }
-//
-//  test("A non-empty list should not be empty") {
-//    List(1, 2, 3) should not be ('empty)
-//    List("fee", "fie", "foe", "fum") should not be ('empty)
-//  }
-//
-//  test("A list's length should equal the number of elements it contains") {
-//    List() should have length (0)
-//    List(1, 2) should have length (2)
-//    List("fee", "fie", "foe", "fum") should have length (4)
-//  }
-//}
-
-/*
-ScalaTest also supports the behavior-driven development style, in which you
-combine tests with text that specifies the behavior being tested. Here's
-an example whose text output when run looks like:
-
-A Map
-- should only contain keys and values that were added to it
-- should report its size as the number of key/value pairs it contains
-*/
-import org.scalatest.FunSpec
 
 class BooleanLayerSpec extends FunSpec with Matchers {
 
@@ -47,7 +13,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         x <- 1 to 9
         y <- 1 to 9
       } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells.toList)
+      val layer = BooleanLayer(1, cells)
 
       layer.setValue(1, 1, 1)
       assert(layer.cells.filter(c => c.y == 1 && c.x == 1).forall(_.value.contains(true)), "The cell must contain true")
@@ -64,7 +30,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         x <- 1 to 9
         y <- 1 to 9
       } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells.toList)
+      val layer = BooleanLayer(1, cells)
       layer.setValue(1, 1, 2)
       assert(layer.cells.filter(c => c.y == 1 && c.x == 1).forall(_.value.contains(false)), "The cell must contain false")
       assert(layer.cells.filter(c => c.y != 1 && c.x != 1).forall(_.value.isEmpty), "All other cells must be empty")
@@ -75,7 +41,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         x <- 1 to 9
         y <- 1 to 9
       } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells.toList)
+      val layer = BooleanLayer(1, cells)
       // Set two rows of the first block to zeroes
       layer.cells.filter(c => c.x > 0 && c.x < 4 && c.y > 0 && c.y < 3).foreach(_.setValue(false))
 
@@ -89,7 +55,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         x <- 1 to 9
         y <- 1 to 9
       } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells.toList)
+      val layer = BooleanLayer(1, cells)
       // Set two rows of the first block to zeroes
       layer.cells.filter(c => c.x > 0 && c.x < 3 && c.y > 0 && c.y < 4).foreach(_.setValue(false))
 
@@ -102,7 +68,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       val cells = for {
         x <- 1 to 8
       } yield BinaryCell(x, 1, Some(false))
-      val layer = BooleanLayer(1, (cells :+ BinaryCell(9, 1, None)) toList)
+      val layer = BooleanLayer(1, cells :+ BinaryCell(9, 1, None))
 
       assert(layer.findSolution().head == ValueCell(9, 1, 1))
     }
@@ -112,7 +78,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       val cells = for {
         x <- 1 to 8
       } yield BinaryCell(x, 1, Some(false))
-      val layer = BooleanLayer(1, (cells :+ BinaryCell(8, 1, None) :+ BinaryCell(8, 2, Some(true)) :+ BinaryCell(9,1, Some(true))) toList)
+      val layer = BooleanLayer(1, cells :+ BinaryCell(8, 1, None) :+ BinaryCell(8, 2, Some(true)) :+ BinaryCell(9,1, Some(true)))
 
       assert(layer.findSolution().headOption.isEmpty)
     }
@@ -125,7 +91,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
           x <- 1 to 9
           y <- 1 to 9
         } yield BinaryCell(x, y, None)
-        BooleanLayer(index, cells.toList)
+        BooleanLayer(index, cells)
       }
 
       for {
@@ -134,7 +100,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         if layer.value > 1 && cell.x == 1 && cell.y == 1
       } cell.setValue(false)
 
-      assert(BooleanLayer.findSoleCandidates(layers.toList).head == ValueCell(1, 1, 1))
+      assert(BooleanLayer.findSoleCandidates(layers).head == ValueCell(1, 1, 1))
     }
   }
 

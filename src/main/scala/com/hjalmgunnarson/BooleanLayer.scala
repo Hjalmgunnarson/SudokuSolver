@@ -1,7 +1,8 @@
 package com.hjalmgunnarson
 
 import scala.language.postfixOps
-case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
+
+case class BooleanLayer(value: Int, cells: List[BinaryCell]) {
   // Lines contains the horizontal lists of cells.
   val lines: Map[Int, List[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
@@ -36,8 +37,8 @@ case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
   // Sets value in designated cell and excludes cells with the same coordinates on the other layers
   // Excludes cells in the same line, column and block on this layer
   def setValue(x: Int, y: Int, value: Int): Unit = {
-    cells.find(_.hasCoordinates(x, y)).foreach(_.setValue(value == index))
-    if (this.index == value) {
+    cells.find(_.hasCoordinates(x, y)).foreach(_.setValue(this.value == value))
+    if (this.value == value) {
       for {cell <- lines(y) if cell.x != x} cell.setValue(false) // all other cells on this line cannot hold the number
       for {cell <- columns(x) if cell.y != y} cell.setValue(false) // all other cells in this column cannot hold the number
       for {cell <- blocks(getBlockId(x, y)) if cell.x != x && cell.y != y} cell.setValue(false) // all other cells in this block cannot hold the number
@@ -68,13 +69,15 @@ case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
   }
 
   // Join all the lines, columns and block and search
-  def findSolution(): List[ValueCell] =
-    lines.values ++ columns.values ++ blocks.values flatMap findUniqueCandidates toList
+  def findSolution(): List[ValueCell] = {
+    val allLists = lines.values ++ columns.values ++ blocks.values
+    allLists.flatMap(list => findUniqueCandidate(list, this.value)) toList
+  }
 
-  // find the lists of cells holding exactly one empty cell. This cell should contain the number
-  def findUniqueCandidates(cells: List[BinaryCell]): Option[ValueCell] =
+  // Check if the list contains exactly one empty cell. When there are no cells holding true, this cell should contain the number
+  def findUniqueCandidate(cells: List[BinaryCell], value: Int): Option[ValueCell] =
     cells.filter(_.value.isEmpty) match {
-      case i :: Nil if !cells.exists(_.value.contains(true)) => Some(ValueCell(i.x, i.y, this.index))
+      case cell :: Nil if !cells.exists(_.value.contains(true)) => Some(ValueCell(cell.x, cell.y, value))
       case _ => None
     }
 
@@ -96,7 +99,7 @@ case class BooleanLayer(index: Int, cells: List[BinaryCell]) {
       y = y + 1
     }
     println(" -------------------")
-    println(this.index)
+    println(this.value)
 
   }
 
@@ -115,8 +118,8 @@ object BooleanLayer {
     val cellsByCoordinates = for {
       x <- 1 to 9
       y <- 1 to 9
-    } yield layers.map(layer => (layer.index, layer.cells.find(_.hasCoordinates(x, y)).get))
-
+    } yield layers.map(layer => (layer.value, layer.cells.find(_.hasCoordinates(x, y)).get))
+    // TODO: Remove.get above
     cellsByCoordinates.flatMap(cellsForCoordinate => cellsForCoordinate.filter(_._2.value.isEmpty) match {
       case (value, cell) :: Nil => Some(ValueCell(cell.x, cell.y, value))
       case _ => None

@@ -8,7 +8,7 @@ object SudokuSolver {
 
 class Sudoku() {
   // Create the empty layers to store clues
-  var layers: Seq[BooleanLayer] = for {
+  val layers: Seq[BooleanLayer] = for {
     index <- 1 to 9
   } yield {
     val cells = for {
@@ -146,7 +146,7 @@ class Sudoku() {
       layer <- layers
       cell <- layer.cells
       if cell.value.isEmpty
-    } yield ValueCell(cell.x, cell.y, layer.index)).groupBy(cell => cell.x + (cell.y - 1) * 9)
+    } yield ValueCell(cell.x, cell.y, layer.value)).groupBy(cell => cell.x + (cell.y - 1) * 9)
     for {
       (_, values) <- temp.toSeq.sortBy(_._1)
       value <- values

@@ -2,37 +2,37 @@ package com.hjalmgunnarson
 
 import scala.language.postfixOps
 
-case class BooleanLayer(value: Int, cells: List[BinaryCell]) {
+case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
   // Lines contains the horizontal lists of cells.
-  val lines: Map[Int, List[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
+  val lines: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
-  val columns: Map[Int, List[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
+  val columns: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
   // Block contains the lists of cells grouped by block
-  val blocks: Map[Int, List[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(cell => getBlockId(cell.x, cell.y) == i))) toMap
+  val blocks: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(cell => getBlockId(cell.x, cell.y) == i))) toMap
 
   // Each line is divided into three lists of three cells.
-  val lineParts: List[ListPart] = (for {
+  val lineParts: Seq[ListPart] = for {
     lineIndex <- 1 to 9
     blockIndex <- 1 to 3
-  } yield ListPart(lineIndex, blockIndex, cells.filter(cell => blockIndex == mod(cell.x) && lineIndex == cell.y))) toList
+  } yield ListPart(lineIndex, blockIndex, cells.filter(cell => blockIndex == mod(cell.x) && lineIndex == cell.y))
 
   // Each column is divided into three lists of three cells.
-  val columnParts: List[ListPart] = (for {
+  val columnParts: Seq[ListPart] = for {
     columnIndex <- 1 to 9
     blockIndex <- 1 to 3
-  } yield ListPart(columnIndex, blockIndex, cells.filter(cell => columnIndex == cell.x && blockIndex == mod(cell.y)))) toList
+  } yield ListPart(columnIndex, blockIndex, cells.filter(cell => columnIndex == cell.x && blockIndex == mod(cell.y)))
 
   // All parts of the lines are grouped by the block they're in
-  val linePartsPerBlock: List[List[ListPart]] = (for {
+  val linePartsPerBlock: Seq[Seq[ListPart]] = for {
     vertBlockIndex <- 1 to 3
     horBlockIndex <- 1 to 3
-  } yield lineParts.filter(part => mod(part.index) == vertBlockIndex && part.partIndex == horBlockIndex)) toList
+  } yield lineParts.filter(part => mod(part.index) == vertBlockIndex && part.partIndex == horBlockIndex)
 
   // All parts of the columns are grouped by the block they're in
-  val columnPartsPerBlock: List[List[ListPart]] = (for {
+  val columnPartsPerBlock: Seq[Seq[ListPart]] = for {
     horBlockIndex <- 1 to 3
     vertBlockIndex <- 1 to 3
-  } yield columnParts.filter(part => mod(part.index) == horBlockIndex && part.partIndex == vertBlockIndex)) toList
+  } yield columnParts.filter(part => mod(part.index) == horBlockIndex && part.partIndex == vertBlockIndex)
 
   // Sets value in designated cell and excludes cells with the same coordinates on the other layers
   // Excludes cells in the same line, column and block on this layer
@@ -55,29 +55,29 @@ case class BooleanLayer(value: Int, cells: List[BinaryCell]) {
   // this means the row or column in the related blocks cannot hold this number.
   def excludeCellsByBlockVsLineOrColumn(): Unit = {
     linePartsPerBlock.map(_.filter(!_.allZeroes())).foreach {
-      // this block contains two lines where the number can't be placed. It must be place on line listPart.index
+      // this block contains two lines where the number can't be placed. It must be placed on line listPart.index
       // exclude all the other cells in the line outside this block
-      case listPart :: Nil => for {cell <- lines(listPart.index) if mod(cell.x) != listPart.partIndex} cell.setValue(false)
+      case Seq(listPart) => for {cell <- lines(listPart.index) if mod(cell.x) != listPart.partIndex} cell.setValue(false)
       case _ => ()
     }
     columnPartsPerBlock.map(_.filter(!_.allZeroes())).foreach {
-      // this block contains two lines where the number can't be placed. It must be place on column listPart.index
+      // this block contains two lines where the number can't be placed. It must be placed on column listPart.index
       // exclude all the other cells in the column outside this block
-      case listPart :: Nil => for {cell <- columns(listPart.index) if mod(cell.y) != listPart.partIndex} cell.setValue(false)
+      case Seq(listPart) => for {cell <- columns(listPart.index) if mod(cell.y) != listPart.partIndex} cell.setValue(false)
       case _ => ()
     }
   }
 
   // Join all the lines, columns and block and search
-  def findSolution(): List[ValueCell] = {
+  def findSolution(): Seq[ValueCell] = {
     val allLists = lines.values ++ columns.values ++ blocks.values
-    allLists.flatMap(list => findUniqueCandidate(list, this.value)) toList
+    allLists.flatMap(list => findUniqueCandidate(list, this.value)) toSeq
   }
 
   // Check if the list contains exactly one empty cell. When there are no cells holding true, this cell should contain the number
-  def findUniqueCandidate(cells: List[BinaryCell], value: Int): Option[ValueCell] =
+  def findUniqueCandidate(cells: Seq[BinaryCell], value: Int): Option[ValueCell] =
     cells.filter(_.value.isEmpty) match {
-      case cell :: Nil if !cells.exists(_.value.contains(true)) => Some(ValueCell(cell.x, cell.y, value))
+      case Seq(cell) if !cells.exists(_.value.contains(true)) => Some(ValueCell(cell.x, cell.y, value))
       case _ => None
     }
 
@@ -114,7 +114,7 @@ case class BooleanLayer(value: Int, cells: List[BinaryCell]) {
 object BooleanLayer {
   // use the cells with the same coords on all layers to see if only one of them is empty
   // If so, it is the sole candidate for that cell
-  def findSoleCandidates(layers: List[BooleanLayer]): List[ValueCell] = {
+  def findSoleCandidates(layers: Seq[BooleanLayer]): Seq[ValueCell] = {
     val cellsByCoordinates = for {
       x <- 1 to 9
       y <- 1 to 9
@@ -127,7 +127,7 @@ object BooleanLayer {
   }
 }
 
-case class ListPart(index: Int, partIndex: Int, cells: List[BinaryCell]) {
+case class ListPart(index: Int, partIndex: Int, cells: Seq[BinaryCell]) {
   def allZeroes(): Boolean = cells.forall(_.value.contains(false))
 }
 

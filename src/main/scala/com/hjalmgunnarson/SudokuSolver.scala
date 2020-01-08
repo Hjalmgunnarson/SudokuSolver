@@ -15,14 +15,14 @@ class Sudoku() {
       x <- 1 to 9
       y <- 1 to 9
     } yield BinaryCell(x, y, None)
-    BooleanLayer(index, cells.toList)
+    BooleanLayer(index, cells)
   }
 
   def setValue(x: Int, y: Int, value: Int): Unit = layers.foreach(_.setValue(x, y, value))
 
-  def findSolutions(): List[ValueCell] = {
+  def findSolutions(): Seq[ValueCell] = {
     layers.foreach(_.excludeCellsByBlockVsLineOrColumn())
-    (layers.flatMap(_.findSolution()).toList ++ BooleanLayer.findSoleCandidates(layers.toList)).distinct
+    (layers.flatMap(_.findSolution()) ++ BooleanLayer.findSoleCandidates(layers)).distinct
   }
 
   /**

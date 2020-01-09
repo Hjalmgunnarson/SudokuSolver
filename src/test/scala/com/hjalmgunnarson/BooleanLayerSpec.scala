@@ -43,10 +43,12 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       } yield BinaryCell(x, y, None)
       val layer = BooleanLayer(1, cells)
       // Set two rows of the first block to zeroes
-      layer.cells.filter(c => c.x > 0 && c.x < 4 && c.y > 0 && c.y < 3).foreach(_.setValue(false))
+      for {
+        x <- 1 to 3
+        y <- 1 to 2
+      } layer.cells.find(cell => cell.x == x && cell.y == y).foreach(_.setValue(false))
 
       layer.excludeCellsByBlockVsLineOrColumn()
-
       assert(layer.cells.filter(c => c.x > 3 && c.y == 3).forall(_.value.contains(false)))
     }
 
@@ -56,11 +58,13 @@ class BooleanLayerSpec extends FunSpec with Matchers {
         y <- 1 to 9
       } yield BinaryCell(x, y, None)
       val layer = BooleanLayer(1, cells)
-      // Set two rows of the first block to zeroes
-      layer.cells.filter(c => c.x > 0 && c.x < 3 && c.y > 0 && c.y < 4).foreach(_.setValue(false))
+      // Set two columns of the first block to zeroes
+      for {
+        x <- 1 to 2
+        y <- 1 to 3
+      } layer.cells.find(cell => cell.x == x && cell.y == y).foreach(_.setValue(false))
 
       layer.excludeCellsByBlockVsLineOrColumn()
-
       assert(layer.cells.filter(c => c.y > 3 && c.x == 3).forall(_.value.contains(false)))
     }
 

@@ -7,32 +7,11 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
   val lines: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
   val columns: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
-  // Block contains the lists of cells grouped by block
-  val blocks: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(cell => getBlockId(cell.x, cell.y) == i))) toMap
-
-  // Each line is divided into three lists of three cells.
-  val lineParts: Seq[ListPart] = for {
-    lineIndex <- 1 to 9
-    blockIndex <- 1 to 3
-  } yield ListPart(lineIndex, blockIndex, cells.filter(cell => blockIndex == mod(cell.x) && lineIndex == cell.y))
-
-  // Each column is divided into three lists of three cells.
-  val columnParts: Seq[ListPart] = for {
-    columnIndex <- 1 to 9
-    blockIndex <- 1 to 3
-  } yield ListPart(columnIndex, blockIndex, cells.filter(cell => columnIndex == cell.x && blockIndex == mod(cell.y)))
-
-  // All parts of the lines are grouped by the block they're in
-  val linePartsPerBlock: Seq[Seq[ListPart]] = for {
-    vertBlockIndex <- 1 to 3
-    horBlockIndex <- 1 to 3
-  } yield lineParts.filter(part => mod(part.index) == vertBlockIndex && part.partIndex == horBlockIndex)
-
-  // All parts of the columns are grouped by the block they're in
-  val columnPartsPerBlock: Seq[Seq[ListPart]] = for {
-    horBlockIndex <- 1 to 3
-    vertBlockIndex <- 1 to 3
-  } yield columnParts.filter(part => mod(part.index) == horBlockIndex && part.partIndex == vertBlockIndex)
+  // Block contains the lists of block that hold list of cells contained by the block
+  val blocks: Seq[Block] = for {
+    x <- 1 to 3
+    y <- 1 to 3
+  } yield Block(x, y, cells.filter(cell => mod(cell.x) == x && mod(cell.y) == y))
 
   // Sets value in designated cell and excludes cells with the same coordinates on the other layers
   // Excludes cells in the same line, column and block on this layer
@@ -41,7 +20,12 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
     if (this.value == value) {
       for {cell <- lines(y) if cell.x != x} cell.setValue(false) // all other cells on this line cannot hold the number
       for {cell <- columns(x) if cell.y != y} cell.setValue(false) // all other cells in this column cannot hold the number
-      for {cell <- blocks(getBlockId(x, y)) if cell.x != x && cell.y != y} cell.setValue(false) // all other cells in this block cannot hold the number
+      for {
+        block <- blocks
+        if block.containsCell(x, y)
+        cell <- block.cells
+        if cell.x != x && cell.y != y
+      } cell.setValue(false) // all other cells in this block cannot hold the number
     }
   }
 
@@ -50,27 +34,23 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
    * can only be placed in one row or column of a block,
    * this means the row or column in the related blocks cannot holds this number.
    */
-  // Excludes cells based on the the content of a block. If the exact position of a particular number is unknown, but it
-  // can only be placed in one row or column of a block,
-  // this means the row or column in the related blocks cannot hold this number.
   def excludeCellsByBlockVsLineOrColumn(): Unit = {
-    linePartsPerBlock.map(_.filter(!_.allZeroes())).foreach {
-      // this block contains two lines where the number can't be placed. It must be placed on line listPart.index
-      // exclude all the other cells in the line outside this block
-      case Seq(listPart) => for {cell <- lines(listPart.index) if mod(cell.x) != listPart.partIndex} cell.setValue(false)
-      case _ => ()
-    }
-    columnPartsPerBlock.map(_.filter(!_.allZeroes())).foreach {
-      // this block contains two lines where the number can't be placed. It must be placed on column listPart.index
-      // exclude all the other cells in the column outside this block
-      case Seq(listPart) => for {cell <- columns(listPart.index) if mod(cell.y) != listPart.partIndex} cell.setValue(false)
-      case _ => ()
-    }
+    for {
+      (_, groupedBlocks) <- blocks.groupBy(_.y) // For each horizontal row of three blocks
+      block <- groupedBlocks // Check each block
+      y <- block.getCandidateLine // And see if it has only one line that can hold the value
+    } groupedBlocks.filter(_.x != block.x).map(b => b.cells.map(c => if (c.y == y) c.setValue(false)))
+
+    for {
+      (_, groupedBlocks) <- blocks.groupBy(_.x) // For each vertical row of three blocks
+      block <- groupedBlocks // Check each block
+      x <- block.getCandidateColumn // And see if it has only one column that can hold the value
+    } groupedBlocks.filter(_.y != block.y).map(b => b.cells.map(c => if (c.x == x) c.setValue(false)))
   }
 
   // Join all the lines, columns and block and search
   def findSolution(): Seq[ValueCell] = {
-    val allLists = lines.values ++ columns.values ++ blocks.values
+    val allLists = lines.values ++ columns.values ++ blocks.map(_.cells)
     allLists.flatMap(list => findUniqueCandidate(list, this.value)) toSeq
   }
 
@@ -121,14 +101,30 @@ object BooleanLayer {
     } yield layers.map(layer => (layer.value, layer.cells.find(_.hasCoordinates(x, y)).get))
     // TODO: Remove.get above
     cellsByCoordinates.flatMap(cellsForCoordinate => cellsForCoordinate.filter(_._2.value.isEmpty) match {
-      case (value, cell) :: Nil => Some(ValueCell(cell.x, cell.y, value))
+      case Seq((value, cell)) => Some(ValueCell(cell.x, cell.y, value))
       case _ => None
     }) toList
   }
 }
 
-case class ListPart(index: Int, partIndex: Int, cells: Seq[BinaryCell]) {
+case class ListPart(index: Int, cells: Seq[BinaryCell]) {
   def allZeroes(): Boolean = cells.forall(_.value.contains(false))
 }
 
-case class Block(x: Int, y: Int, lines: List[ListPart], columns: List[ListPart])
+case class Block(x: Int, y: Int, cells: Seq[BinaryCell]) {
+
+  val lines: Seq[ListPart] = cells.groupBy(_.y).map { case (y, list) => ListPart(y, list) } toSeq
+  val columns: Seq[ListPart] = cells.groupBy(_.x).map { case (x, list) => ListPart(x, list) } toSeq
+
+  def getCandidateLine: Option[Int] = getCandidateList(lines)
+
+  def getCandidateColumn: Option[Int] = getCandidateList(columns)
+
+  def containsCell(x: Int, y: Int): Boolean = cells.exists(c => c.x == x && c.y == y)
+
+  // Finds the only listPart2 that is not made up of zeroes
+  private def getCandidateList(lists: Seq[ListPart]): Option[Int] = lists.filter(!_.allZeroes()) match {
+    case Seq(listPart) => Some(listPart.index)
+    case _ => None
+  }
+}

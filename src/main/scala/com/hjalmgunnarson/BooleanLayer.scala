@@ -7,7 +7,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
   val lines: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
   val columns: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
-  // Block contains the lists of block that hold list of cells contained by the block
+  // Blocks contains the lists of blocks that hold a list of cells contained by the block
   val blocks: Seq[Block] = for {
     x <- 1 to 3
     y <- 1 to 3
@@ -46,6 +46,36 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
       block <- groupedBlocks // Check each block
       x <- block.getCandidateColumn // And see if it has only one column that can hold the value
     } groupedBlocks.filter(_.y != block.y).map(b => b.cells.map(c => if (c.x == x) c.setValue(false)))
+  }
+
+  def excludeCellsByCombiningBlocks(): Unit = {
+    for {
+      (_, groupedBlocks) <- blocks.groupBy(_.y)
+    } groupedBlocks.filter(_.hasOneUnavailableLine) match {
+      case Seq(block1, block2) if block1.getUnavailableLine == block2.getUnavailableLine =>
+        for {
+          block <- groupedBlocks
+          if block != block1 && block != block2
+          y <- block1.getUnavailableLine
+          cell <- block.cells
+          if cell.y != y
+        } cell.setValue(false)
+      case _ => ()
+    }
+
+    for {
+      (_, groupedBlocks) <- blocks.groupBy(_.x)
+    } groupedBlocks.filter(_.hasOneUnavailableColumn) match {
+      case Seq(block1, block2) if block1.getUnavailableColumn == block2.getUnavailableColumn =>
+        for {
+          block <- groupedBlocks
+          if block != block1 && block != block2
+          x <- block1.getUnavailableColumn
+          cell <- block.cells
+          if cell.x != x
+        } cell.setValue(false)
+      case _ => ()
+    }
   }
 
   // Join all the lines, columns and block and search
@@ -107,24 +137,3 @@ object BooleanLayer {
   }
 }
 
-case class ListPart(index: Int, cells: Seq[BinaryCell]) {
-  def allZeroes(): Boolean = cells.forall(_.value.contains(false))
-}
-
-case class Block(x: Int, y: Int, cells: Seq[BinaryCell]) {
-
-  val lines: Seq[ListPart] = cells.groupBy(_.y).map { case (y, list) => ListPart(y, list) } toSeq
-  val columns: Seq[ListPart] = cells.groupBy(_.x).map { case (x, list) => ListPart(x, list) } toSeq
-
-  def getCandidateLine: Option[Int] = getCandidateList(lines)
-
-  def getCandidateColumn: Option[Int] = getCandidateList(columns)
-
-  def containsCell(x: Int, y: Int): Boolean = cells.exists(c => c.x == x && c.y == y)
-
-  // Finds the only listPart2 that is not made up of zeroes
-  private def getCandidateList(lists: Seq[ListPart]): Option[Int] = lists.filter(!_.allZeroes()) match {
-    case Seq(listPart) => Some(listPart.index)
-    case _ => None
-  }
-}

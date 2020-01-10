@@ -21,7 +21,7 @@ class Sudoku() {
   def setValue(x: Int, y: Int, value: Int): Unit = layers.foreach(_.setValue(x, y, value))
 
   def findSolutions(): Seq[ValueCell] = {
-    layers.foreach(_.excludeCellsByBlockVsLineOrColumn())
+    layers.foreach(_.excludeCells())
     (layers.flatMap(_.findSolution()) ++ BooleanLayer.findSoleCandidates(layers)).distinct
   }
 

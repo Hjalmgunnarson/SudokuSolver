@@ -49,6 +49,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       } layer.cells.find(cell => cell.x == x && cell.y == y).foreach(_.setValue(false))
 
       layer.excludeCellsByBlockVsLineOrColumn()
+      layer.printLayer()
       assert(layer.cells.filter(c => c.x > 3 && c.y == 3).forall(_.value.contains(false)))
     }
 
@@ -105,6 +106,39 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       } cell.setValue(false)
 
       assert(BooleanLayer.findSoleCandidates(layers).head == ValueCell(1, 1, 1))
+    }
+
+
+    it("should exclude cells from the lines of a block when two related blocks have candidates only in those rows ") {
+      val cells = for {
+        x <- 1 to 9
+        y <- 1 to 9
+      } yield BinaryCell(x, y, None)
+      val layer = BooleanLayer(1, cells)
+      // Set first row of the first two block to zeroes
+      for {
+        x <- 1 to 6
+      } layer.cells.find(cell => cell.x == x && cell.y == 3).foreach(_.setValue(false))
+
+      layer.excludeCellsByCombiningBlocks()
+      layer.printLayer()
+      assert(layer.cells.filter(c => c.x > 6 && (c.y == 1 || c.y == 2)).forall(_.value.contains(false)))
+    }
+
+    it("should exclude cells from the columns of a block when two related blocks have candidates only in those columns ") {
+      val cells = for {
+        x <- 1 to 9
+        y <- 1 to 9
+      } yield BinaryCell(x, y, None)
+      val layer = BooleanLayer(1, cells)
+      // Set first row of the first two block to zeroes
+      for {
+        y <- 1 to 6
+      } layer.cells.find(cell => cell.y == y && cell.x == 3).foreach(_.setValue(false))
+
+      layer.excludeCellsByCombiningBlocks()
+      layer.printLayer()
+      assert(layer.cells.filter(c => c.y > 6 && (c.x == 1 || c.x == 2)).forall(_.value.contains(false)))
     }
   }
 

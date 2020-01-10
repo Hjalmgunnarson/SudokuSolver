@@ -29,25 +29,46 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
     }
   }
 
+  def excludeCells(): Unit = {
+    excludeCellsByBlockVsLineOrColumn()
+    excludeCellsByCombiningBlocks()
+  }
+
   /**
-   * Excludes cells based on the the content of a block. If the exact position of a particular number is unknown, but it
+   * Excludes cells based on the content of a block. If the exact position of a particular number is unknown, but it
    * can only be placed in one row or column of a block,
    * this means the row or column in the related blocks cannot holds this number.
    */
   def excludeCellsByBlockVsLineOrColumn(): Unit = {
     for {
       (_, groupedBlocks) <- blocks.groupBy(_.y) // For each horizontal row of three blocks
-      block <- groupedBlocks // Check each block
-      y <- block.getCandidateLine // And see if it has only one line that can hold the value
-    } groupedBlocks.filter(_.x != block.x).map(b => b.cells.map(c => if (c.y == y) c.setValue(false)))
+      blockUnderInspection <- groupedBlocks // Check each block
+      y <- blockUnderInspection.getCandidateLine // And see if it has only one line that can hold the value
+      blockToBeExcluded <- groupedBlocks
+      if blockToBeExcluded.x != blockUnderInspection.x
+      cell <- blockToBeExcluded.cells
+      if cell.y == y
+      if cell.value.isEmpty
+    } cell.setValue(false)
 
     for {
       (_, groupedBlocks) <- blocks.groupBy(_.x) // For each vertical row of three blocks
-      block <- groupedBlocks // Check each block
-      x <- block.getCandidateColumn // And see if it has only one column that can hold the value
-    } groupedBlocks.filter(_.y != block.y).map(b => b.cells.map(c => if (c.x == x) c.setValue(false)))
+      blockUnderInspection <- groupedBlocks // Check each block
+      x <- blockUnderInspection.getCandidateColumn // And see if it has only one line that can hold the value
+      blockToBeExcluded <- groupedBlocks
+      if blockToBeExcluded.y != blockUnderInspection.y
+      cell <- blockToBeExcluded.cells
+      if cell.x == x
+      if cell.value.isEmpty
+    } cell.setValue(false)
   }
 
+  /**
+   * Exclude cells based on the content of two blocks. If two cells both have the same row or column in which the value
+   * cannot be placed, then it must be placed in the row or column of the third block. Thus the other rows or columns of
+   * the third block can be excluded.
+   *
+   */
   def excludeCellsByCombiningBlocks(): Unit = {
     for {
       (_, groupedBlocks) <- blocks.groupBy(_.y)
@@ -59,6 +80,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
           y <- block1.getUnavailableLine
           cell <- block.cells
           if cell.y != y
+          if cell.value.isEmpty
         } cell.setValue(false)
       case _ => ()
     }
@@ -73,6 +95,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
           x <- block1.getUnavailableColumn
           cell <- block.cells
           if cell.x != x
+          if cell.value.isEmpty
         } cell.setValue(false)
       case _ => ()
     }

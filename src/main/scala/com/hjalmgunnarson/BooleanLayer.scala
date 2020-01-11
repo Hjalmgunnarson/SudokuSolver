@@ -140,22 +140,4 @@ case class BooleanLayer(value: Int) {
 
   //Helper
   def getCell(x: Int, y: Int): Option[BooleanCell] = cells.find(_.hasCoordinates(x, y))
-
 }
-
-object BooleanLayer {
-  // use the cells with the same coords on all layers to see if only one of them is empty
-  // If so, it is the sole candidate for that cell
-  def findSoleCandidates(layers: Seq[BooleanLayer]): Seq[ValueCell] = {
-    val cellsByCoordinates = for {
-      x <- 1 to 9
-      y <- 1 to 9
-    } yield layers.map(layer => (layer.value, layer.getCell(x, y).get))
-    // TODO: Remove.get above
-    cellsByCoordinates.flatMap(cellsForCoordinate => cellsForCoordinate.filter(_._2.value.isEmpty) match {
-      case Seq((value, cell)) => Some(ValueCell(cell.x, cell.y, value))
-      case _ => None
-    }) toList
-  }
-}
-

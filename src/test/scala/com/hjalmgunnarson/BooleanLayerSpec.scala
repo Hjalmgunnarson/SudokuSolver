@@ -63,21 +63,6 @@ class BooleanLayerSpec extends FunSpec with Matchers {
       assert(layer.findSolution().head == ValueCell(9, 1, 1))
     }
 
-    it("should identify the only empty cell from a list of cells that have the same coordinates across all layers") {
-      val layers: Seq[BooleanLayer] = for {
-        index <- 1 to 9
-      } yield BooleanLayer(index)
-
-      for {
-        layer <- layers
-        cell <- layer.cells
-        if layer.value > 1 && cell.x == 1 && cell.y == 1
-      } cell.setValue(false)
-
-      assert(BooleanLayer.findSoleCandidates(layers).head == ValueCell(1, 1, 1))
-    }
-
-
     it("should exclude cells from the lines of a block when two related blocks have candidates only in those rows ") {
       val layer = BooleanLayer(1)
       // Set first row of the first two block to zeroes

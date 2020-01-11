@@ -15,8 +15,21 @@ class Sudoku() {
 
   def findSolutions(): Seq[ValueCell] = {
     layers.foreach(_.excludeCells())
-    (layers.flatMap(_.findSolution()) ++ BooleanLayer.findSoleCandidates(layers)).distinct
+    (layers.flatMap(_.findSolution()) ++ findSoleCandidates()).distinct
   }
+
+  def findSoleCandidates(): Seq[ValueCell] = {
+    getEmptyCellsPerCoordinate.values.flatMap {
+      case Seq(cell) => Option(cell)
+      case _  => None
+    } toSeq
+  }
+
+  private def getEmptyCellsPerCoordinate: Map[Int, Seq[ValueCell]] = (for {
+    layer <- layers
+    cell <- layer.cells
+    if cell.value.isEmpty
+  } yield ValueCell(cell.x, cell.y, layer.value)).groupBy(cell => cell.x + (cell.y - 1) * 9)
 
   def printSudoku(): Unit = {
     var y = 1
@@ -35,19 +48,13 @@ class Sudoku() {
   }
 
   def printCandidates(): Unit = {
-    val temp = (for {
-      layer <- layers
-      cell <- layer.cells
-      if cell.value.isEmpty
-    } yield ValueCell(cell.x, cell.y, layer.value)).groupBy(cell => cell.x + (cell.y - 1) * 9)
     for {
-      (_, values) <- temp.toSeq.sortBy(_._1)
+      (_, values) <- getEmptyCellsPerCoordinate.toSeq.sortBy(_._1)
       value <- values
     } println(value)
   }
 
 }
-
 case class ValueCell(x: Int, y: Int, value: Int) {
   override def toString: String = {
     "(" + x + ", " + y + " = " + value + ")"
@@ -61,7 +68,7 @@ case class ResultCell(x: Int, y: Int, sudoku: Sudoku) {
       layer <- sudoku.layers
       cell <- layer.getCell(x, y)
       value <- cell.value
-      if value
+      if value    // this is the only cell that contains Some(true)
     } yield layer.value).headOption
   }
 

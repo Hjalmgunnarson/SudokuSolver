@@ -2,6 +2,8 @@ package com.hjalmgunnarson
 
 import org.scalatest.{FunSpec, Matchers}
 
+import scala.collection.Seq
+
 class SudokuSpec extends FunSpec with Matchers {
 
   describe("A BooleanLayer") {
@@ -116,6 +118,18 @@ class SudokuSpec extends FunSpec with Matchers {
 
       sudoku.printSudoku()
       assert(true)
+    }
+
+    it("should identify the only empty cell from a list of cells that have the same coordinates across all layers") {
+      val sudoku = new Sudoku
+
+      for {
+        layer <- sudoku.layers
+        cell <- layer.cells
+        if layer.value > 1 && cell.x == 1 && cell.y == 1
+      } cell.setValue(false)
+
+      assert(sudoku.findSoleCandidates().head == ValueCell(1, 1, 1))
     }
   }
 }

@@ -3,15 +3,15 @@ package com.hjalmgunnarson
 import scala.language.postfixOps
 
 case class BooleanLayer(value: Int) {
-  val cells: Seq[BinaryCell] = for {
+  val cells: Seq[BooleanCell] = for {
     x <- 1 to 9
     y <- 1 to 9
-  } yield BinaryCell(x, y, None)
+  } yield BooleanCell(x, y, None)
 
   // Lines contains the horizontal lists of cells.
-  val lines: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
+  val lines: Map[Int, Seq[BooleanCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
-  val columns: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
+  val columns: Map[Int, Seq[BooleanCell]] = 1 to 9 map (i => (i, cells.filter(_.x == i))) toMap
   // Blocks contains the lists of blocks that hold a list of cells contained by the block
   val blocks: Seq[Block] = for {
     x <- 1 to 3
@@ -109,7 +109,7 @@ case class BooleanLayer(value: Int) {
   }
 
   // Check if the list contains exactly one empty cell. When there are no cells holding true, this cell should contain the number
-  def findUniqueCandidate(cells: Seq[BinaryCell], value: Int): Option[ValueCell] =
+  def findUniqueCandidate(cells: Seq[BooleanCell], value: Int): Option[ValueCell] =
     cells.filter(_.value.isEmpty) match {
       case Seq(cell) if !cells.exists(_.value.contains(true)) => Some(ValueCell(cell.x, cell.y, value))
       case _ => None
@@ -139,7 +139,7 @@ case class BooleanLayer(value: Int) {
   def mod(i: Int): Int = 1 + ((i - 1) / 3)
 
   //Helper
-  def getCell(x: Int, y: Int): Option[BinaryCell] = cells.find(_.hasCoordinates(x, y))
+  def getCell(x: Int, y: Int): Option[BooleanCell] = cells.find(_.hasCoordinates(x, y))
 
 }
 

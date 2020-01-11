@@ -1,6 +1,6 @@
 package com.hjalmgunnarson
 
-case class BinaryCell(x: Int, y: Int, var value: Option[Boolean]) {
+case class BooleanCell(x: Int, y: Int, var value: Option[Boolean]) {
   def setValue(v: Boolean, layer: Int = 0, hint: String = ""): Unit = {
     value match {
       case None => value = Some(v)

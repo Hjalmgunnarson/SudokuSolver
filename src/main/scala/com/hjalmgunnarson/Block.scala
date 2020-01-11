@@ -9,10 +9,10 @@ import scala.language.postfixOps
  * @param y     the y coordinate of the block
  * @param cells the nine cells of this block
  */
-case class Block(x: Int, y: Int, cells: Seq[BinaryCell]) {
+case class Block(x: Int, y: Int, cells: Seq[BooleanCell]) {
 
   // Helper class
-  case class ListPart(index: Int, cells: Seq[BinaryCell])
+  case class ListPart(index: Int, cells: Seq[BooleanCell])
 
   val lines: Seq[ListPart] = cells.groupBy(_.y).map { case (y, list) => ListPart(y, list) } toSeq
   val columns: Seq[ListPart] = cells.groupBy(_.x).map { case (x, list) => ListPart(x, list) } toSeq

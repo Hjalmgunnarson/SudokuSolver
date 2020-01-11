@@ -9,11 +9,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
   describe("A BooleanLayer") {
 
     it("should exclude lines, columns and blocks when a value is placed in the layer that holds the number") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
 
       layer.setValue(1, 1, 1)
       assert(layer.cells.filter(c => c.y == 1 && c.x == 1).forall(_.value.contains(true)), "The cell must contain true")
@@ -26,22 +22,14 @@ class BooleanLayerSpec extends FunSpec with Matchers {
     }
 
     it("should only exclude the cell when a value is placed in the layer that holds another number") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
       layer.setValue(1, 1, 2)
       assert(layer.cells.filter(c => c.y == 1 && c.x == 1).forall(_.value.contains(false)), "The cell must contain false")
       assert(layer.cells.filter(c => c.y != 1 && c.x != 1).forall(_.value.isEmpty), "All other cells must be empty")
     }
 
     it("should exclude the cells of the same line of two blocks if a value can only placed in one line of the third block") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
       // Set two rows of the first block to zeroes
       for {
         x <- 1 to 3
@@ -54,11 +42,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
     }
 
     it("should exclude the cells of the same column of two blocks if a value can only placed in one column of the third block") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
       // Set two columns of the first block to zeroes
       for {
         x <- 1 to 2
@@ -70,34 +54,19 @@ class BooleanLayerSpec extends FunSpec with Matchers {
     }
 
     it("should identify the only empty cell in a line, column or block of cells as a candidate") {
-      val cells = for {
-        x <- 1 to 8
-      } yield BinaryCell(x, 1, Some(false))
-      val layer = BooleanLayer(1, cells :+ BinaryCell(9, 1, None))
+      val layer = BooleanLayer(1)
+      for {
+        cell <- layer.lines(1)
+        if cell.x < 9
+      } cell.setValue(false)
 
       assert(layer.findSolution().head == ValueCell(9, 1, 1))
-    }
-
-    it("should not identify the only empty cell in a line, column or block of cells as a candidate when it holds a " +
-      "value in another cell") {
-      val cells = for {
-        x <- 1 to 8
-      } yield BinaryCell(x, 1, Some(false))
-      val layer = BooleanLayer(1, cells :+ BinaryCell(8, 1, None) :+ BinaryCell(8, 2, Some(true)) :+ BinaryCell(9,1, Some(true)))
-
-      assert(layer.findSolution().headOption.isEmpty)
     }
 
     it("should identify the only empty cell from a list of cells that have the same coordinates across all layers") {
       val layers: Seq[BooleanLayer] = for {
         index <- 1 to 9
-      } yield {
-        val cells = for {
-          x <- 1 to 9
-          y <- 1 to 9
-        } yield BinaryCell(x, y, None)
-        BooleanLayer(index, cells)
-      }
+      } yield BooleanLayer(index)
 
       for {
         layer <- layers
@@ -110,11 +79,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
 
 
     it("should exclude cells from the lines of a block when two related blocks have candidates only in those rows ") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
       // Set first row of the first two block to zeroes
       for {
         x <- 1 to 6
@@ -126,11 +91,7 @@ class BooleanLayerSpec extends FunSpec with Matchers {
     }
 
     it("should exclude cells from the columns of a block when two related blocks have candidates only in those columns ") {
-      val cells = for {
-        x <- 1 to 9
-        y <- 1 to 9
-      } yield BinaryCell(x, y, None)
-      val layer = BooleanLayer(1, cells)
+      val layer = BooleanLayer(1)
       // Set first row of the first two block to zeroes
       for {
         y <- 1 to 6

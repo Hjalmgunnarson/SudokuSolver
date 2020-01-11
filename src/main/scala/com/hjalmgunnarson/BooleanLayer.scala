@@ -2,7 +2,12 @@ package com.hjalmgunnarson
 
 import scala.language.postfixOps
 
-case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
+case class BooleanLayer(value: Int) {
+  val cells: Seq[BinaryCell] = for {
+    x <- 1 to 9
+    y <- 1 to 9
+  } yield BinaryCell(x, y, None)
+
   // Lines contains the horizontal lists of cells.
   val lines: Map[Int, Seq[BinaryCell]] = 1 to 9 map (i => (i, cells.filter(_.y == i))) toMap
   // Columns contains the vertical lists of cells.
@@ -16,16 +21,16 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
   // Sets value in designated cell and excludes cells with the same coordinates on the other layers
   // Excludes cells in the same line, column and block on this layer
   def setValue(x: Int, y: Int, value: Int): Unit = {
-    cells.find(_.hasCoordinates(x, y)).foreach(_.setValue(this.value == value))
+    getCell(x, y).foreach(_.setValue(this.value == value, this.value, "setValue for cell"))
     if (this.value == value) {
-      for {cell <- lines(y) if cell.x != x} cell.setValue(false) // all other cells on this line cannot hold the number
-      for {cell <- columns(x) if cell.y != y} cell.setValue(false) // all other cells in this column cannot hold the number
+      for {cell <- lines(y) if cell.x != x} cell.setValue(v = false, this.value, "setValue for line") // all other cells on this line cannot hold the number
+      for {cell <- columns(x) if cell.y != y} cell.setValue(v = false, this.value, "setValue for column") // all other cells in this column cannot hold the number
       for {
         block <- blocks
         if block.containsCell(x, y)
         cell <- block.cells
         if cell.x != x && cell.y != y
-      } cell.setValue(false) // all other cells in this block cannot hold the number
+      } cell.setValue(v = false, this.value, "setValue for block") // all other cells in this block cannot hold the number
     }
   }
 
@@ -48,8 +53,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
       if blockToBeExcluded.x != blockUnderInspection.x
       cell <- blockToBeExcluded.cells
       if cell.y == y
-      if cell.value.isEmpty
-    } cell.setValue(false)
+    } cell.setValue(v = false, this.value, "exclude line in two blocks")
 
     for {
       (_, groupedBlocks) <- blocks.groupBy(_.x) // For each vertical row of three blocks
@@ -59,8 +63,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
       if blockToBeExcluded.y != blockUnderInspection.y
       cell <- blockToBeExcluded.cells
       if cell.x == x
-      if cell.value.isEmpty
-    } cell.setValue(false)
+    } cell.setValue(v = false, this.value, "exclude column in two blocks")
   }
 
   /**
@@ -80,8 +83,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
           y <- block1.getUnavailableLine
           cell <- block.cells
           if cell.y != y
-          if cell.value.isEmpty
-        } cell.setValue(false)
+        } cell.setValue(v = false, this.value, "exclude line in one blocks")
       case _ => ()
     }
 
@@ -95,8 +97,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
           x <- block1.getUnavailableColumn
           cell <- block.cells
           if cell.x != x
-          if cell.value.isEmpty
-        } cell.setValue(false)
+        } cell.setValue(v = false, this.value, "exclude column in one blocks")
       case _ => ()
     }
   }
@@ -121,11 +122,7 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
       if ((y - 1) % 3 == 0) println(" -------------------")
       while (x <= 9) {
         if ((x - 1) % 3 == 0) print(" | ")
-        print(cells.find(_.hasCoordinates(x, y)).get.value match {
-          case None => "-"
-          case Some(true) => "1"
-          case Some(false) => "0"
-        })
+        print(getCell(x, y).get)
         x = x + 1
       }
       println(" |")
@@ -133,7 +130,6 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
     }
     println(" -------------------")
     println(this.value)
-
   }
 
   // Calculate block id for a cell
@@ -141,6 +137,9 @@ case class BooleanLayer(value: Int, cells: Seq[BinaryCell]) {
 
   // Helper
   def mod(i: Int): Int = 1 + ((i - 1) / 3)
+
+  //Helper
+  def getCell(x: Int, y: Int): Option[BinaryCell] = cells.find(_.hasCoordinates(x, y))
 
 }
 
@@ -151,7 +150,7 @@ object BooleanLayer {
     val cellsByCoordinates = for {
       x <- 1 to 9
       y <- 1 to 9
-    } yield layers.map(layer => (layer.value, layer.cells.find(_.hasCoordinates(x, y)).get))
+    } yield layers.map(layer => (layer.value, layer.getCell(x, y).get))
     // TODO: Remove.get above
     cellsByCoordinates.flatMap(cellsForCoordinate => cellsForCoordinate.filter(_._2.value.isEmpty) match {
       case Seq((value, cell)) => Some(ValueCell(cell.x, cell.y, value))

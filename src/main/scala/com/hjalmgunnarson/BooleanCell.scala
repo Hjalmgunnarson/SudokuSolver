@@ -5,7 +5,7 @@ case class BooleanCell(x: Int, y: Int, var value: Option[Boolean]) {
     value match {
       case None => value = Some(v)
       case Some(value) if value != v =>
-        throw new Exception(s"Trying to set layer $layer x = $x, y = $y to $v, but was already set to $value in $hint")
+        throw new Exception(s"Trying to set layer $layer -> x = $x, y = $y to $v, but was already set to $value in $hint")
       case _ => ()
     }
   }

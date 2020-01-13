@@ -13,19 +13,29 @@ class Sudoku() {
 
   def setValue(x: Int, y: Int, value: Int): Unit = layers.foreach(_.setValue(x, y, value))
 
+  def solve(solutions: Seq[ValueCell]): Seq[ValueCell] = {
+    val newSolutions = findSolutions()
+    newSolutions match {
+      case Seq() => solutions
+      case _ =>
+        newSolutions.foreach(cell => setValue(cell.x, cell.y, cell.value))
+        solve(solutions ++ newSolutions)
+    }
+  }
+
   def findSolutions(): Seq[ValueCell] = {
     layers.foreach(_.excludeCells())
     (layers.flatMap(_.findSolution()) ++ findSoleCandidates()).distinct
   }
 
   def findSoleCandidates(): Seq[ValueCell] = {
-    getEmptyCellsPerCoordinate.values.flatMap {
+    getCandidatesPerCoordinate.values.flatMap {
       case Seq(cell) => Option(cell)
       case _  => None
     } toSeq
   }
 
-  private def getEmptyCellsPerCoordinate: Map[Int, Seq[ValueCell]] = (for {
+  private def getCandidatesPerCoordinate: Map[Int, Seq[ValueCell]] = (for {
     layer <- layers
     cell <- layer.cells
     if cell.value.isEmpty
@@ -49,7 +59,7 @@ class Sudoku() {
 
   def printCandidates(): Unit = {
     for {
-      (_, values) <- getEmptyCellsPerCoordinate.toSeq.sortBy(_._1)
+      (_, values) <- getCandidatesPerCoordinate.toSeq.sortBy(_._1)
       value <- values
     } println(value)
   }

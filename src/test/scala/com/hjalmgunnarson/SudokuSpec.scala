@@ -120,6 +120,48 @@ class SudokuSpec extends FunSpec with Matchers {
       assert(true)
     }
 
+
+
+    it("should yield a complete list of solutions") {
+      val sudoku = new Sudoku
+      sudoku.setValue(1, 1, 4)
+      sudoku.setValue(2, 1, 9)
+      sudoku.setValue(8, 1, 6)
+
+      sudoku.setValue(1, 2, 6)
+      sudoku.setValue(8, 2, 1)
+      sudoku.setValue(9, 2, 7)
+
+      sudoku.setValue(1, 3, 1)
+      sudoku.setValue(5, 3, 7)
+      sudoku.setValue(6, 3, 3)
+      sudoku.setValue(7, 3, 9)
+
+      sudoku.setValue(1, 4, 9)
+      sudoku.setValue(2, 4, 7)
+      sudoku.setValue(3, 4, 4)
+      sudoku.setValue(9, 4, 2)
+
+
+      sudoku.setValue(4, 6, 8)
+      sudoku.setValue(5, 6, 5)
+      sudoku.setValue(6, 6, 4)
+
+      sudoku.setValue(6, 7, 5)
+      sudoku.setValue(7, 7, 4)
+      sudoku.setValue(8, 7, 3)
+
+      sudoku.setValue(1, 8, 7)
+      sudoku.setValue(3, 8, 5)
+      sudoku.setValue(9, 8, 9)
+
+      sudoku.setValue(2, 9, 2)
+      sudoku.setValue(6, 9, 1)
+
+      println(sudoku.solve(Nil))
+      sudoku.printSudoku()
+    }
+
     it("should identify the only empty cell from a list of cells that have the same coordinates across all layers") {
       val sudoku = new Sudoku
 
